@@ -13,9 +13,9 @@ def GetKernel(kernel_type):
         return GaussKernel
 
 def GaussKernel(x1,x2,params):
-    kernel=np.empty((x1.shape[0],x1.shape[0]))
+    kernel=np.empty((x1.shape[0],x2.shape[0]))
     #VECTORIZE THIS TO IMPROVE SPEED
     for i in range(len(x1)):
         for j in range(len(x2)):
-            kernel[i,j] = params["sigma"]*np.exp(-(1/2*params["lambda"]**2)*np.sum((x1[i]-x2[j])**2))
+            kernel[i,j] = params[0]*np.exp(-(1/2*params[1]**2)*np.sum((x1[i]-x2[j])**2))
     return kernel
