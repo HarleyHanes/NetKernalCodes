@@ -5,7 +5,8 @@ Created on Sat Nov 20 15:36:17 2021
 @author: USER
 """
 import numpy as np
-import networkx
+import networkx as nx
+import matplotlib.pyplot as plt
 
 # def GetDummyData(num_samples,network_size):
 #     positive_case_key= 2;
@@ -21,6 +22,53 @@ import networkx
 #     group1_basevec.append(np.ones(group1_num_contacts))
 #     group1_basevec.append(np.zeros(network_size-group1_num_infections-group1_num_contacts))
 #     networkx.
+
+def GetSimulatedData(num_samples, models, network_size, sir_params, avg_contacts, infection_cutoff):
+    x_adjMat= []
+    x_adjVec = []
+    x_infVec = []
+    x_contactVec = []
+    y_time = []
+    y_network = []
+    num_models = len(models)
+    for j in range(num_models):
+        network_type = models[j]
+        for i in range(int(num_samples/num_models)):
+            #Generate Graphs with mean # of contacts equal to avg contacts (except complete)
+            if network_type.lower()=="small worlds":
+                graph = nx.watts_strogatz_graph(network_size, avg_contacts, .1)
+            elif network_type.lower()=="erdos renyi":
+                graph = nx.fast_gnp_random_graph(network_size, 2*avg_contacts/(network_size-1))
+            elif network_type.lower()=="complete":
+                graph = nx.erdos_renyi_graph(network_size, 1)
+            elif network_type.lower() == "scale-free":
+                graph = nx.barabasi_albert_graph(network_size, avg_contacts)
+            # #Draw Adjacency matrix
+            ad_mat = nx.linalg.graphmatrix.adjacency_matrix(graph).toarray()
+            # #Simulate infection 
+            (ad_mat, infVec, contactVec, time)=SIRnet(sir_params, network_size*infection_cutoff, ad_mat, initInfected=0)
+            # #Vectorize
+            ad_vec = np.squeeze(ad_mat.flatten())
+            # print(ad_mat.shape)
+            # print(ad_vec.shape)
+            # print(infVec.shape)
+            # print(contactVec.shape)
+            # print(time.shape)
+            # print(network_type.lower())
+            # #Save x-Data
+            x_adjMat.append(ad_mat)
+            x_adjVec.append(ad_vec)
+            x_infVec.append(infVec)
+            x_contactVec.append(contactVec)
+            # #Save y-data
+            y_time.append(time)
+            y_network.append(network_type.lower())
+            
+    #Save data
+    np.savez("../data/full_data", x_adjMat = x_adjMat, x_adjVec=x_adjVec, x_infVec=x_infVec, 
+             x_contactVec= x_contactVec, y_time = y_time, y_network= y_network)
+            
+        
     
 def GetFullTestData(num_samples, num_contacts, network_size):
     #Set Global params
@@ -34,9 +82,9 @@ def GetFullTestData(num_samples, num_contacts, network_size):
     #Get small-worlds test
     for i in range(int(num_samples/2)):
         #Generate small-worlds network
-        graph = networkx.watts_strogatz_graph(network_size,k_smallWorlds,p_smallWorlds)
+        graph = nx.watts_strogatz_graph(network_size,k_smallWorlds,p_smallWorlds)
         #Extract Adjacency Matrix
-        ad_mat = networkx.linalg.graphmatrix.adjacency_matrix(graph).toarray()
+        ad_mat = nx.linalg.graphmatrix.adjacency_matrix(graph).toarray()
         #Vectorize
         ad_vec = np.squeeze(ad_mat.flatten())
         #Save Matrix
@@ -46,9 +94,9 @@ def GetFullTestData(num_samples, num_contacts, network_size):
         #y_data.append("small worlds")   
     for i in range(int(num_samples/2)):
         #Generate small-worlds network
-        graph = networkx.gnp_random_graph(network_size, p_dense)
+        graph = nx.gnp_random_graph(network_size, p_dense)
         #Extract Adjacency Matrix
-        ad_mat = networkx.linalg.graphmatrix.adjacency_matrix(graph).toarray()
+        ad_mat = nx.linalg.graphmatrix.adjacency_matrix(graph).toarray()
         #Vectorize
         ad_vec = np.squeeze(ad_mat.flatten())
         #Save Matrix
@@ -76,7 +124,7 @@ def TrimNetwork(adjMat,infectedNodes,contactDepth,dataLossProb = 0):
         adjMat_trimmed[:,i]=contacts
     return adjMat_trimmed
 
-def SIRnet(thetaVec, N, adjMat, initInfected, chainBool=True, plotChain=False):
+def SIRnet(thetaVec, N, adjMat, initInfected=0, chainBool=False, plotChain=False):
     '''
     +++++++++++++++++++++++++++++++
     SIRnet function: generates a "fuzzy" random walk of a network from a stochastic
@@ -111,6 +159,9 @@ def SIRnet(thetaVec, N, adjMat, initInfected, chainBool=True, plotChain=False):
         NVec = np.array(range(len(adjMat))) # total no. of nodes
         infVec = np.array([initInfected], dtype = int)
         recVec = [] # empty array
+        time = 0
+        timeVec = np.array([0])  #Vector of when outbreak reaches different % infected
+        cutoff = .05    #Start saving times at 5% infected
 
         while (infCount < N) & (infCount > 0):
 
@@ -136,7 +187,9 @@ def SIRnet(thetaVec, N, adjMat, initInfected, chainBool=True, plotChain=False):
             tmpRand = np.random.uniform()
             if tmpRand <= rateS2I:
                 # a random susceptible becomes infected
-                infVec = np.sort(np.append(infVec, np.random.choice(atRiskSus, 1)))
+                infNode = np.random.choice(atRiskSus, 1)
+                infVec = np.append(infVec, infNode)    #Removed sorting so we can keep
+                                                       # track of order of infection
                 infCount += 1
             else:
                 # an infected individual recovers
@@ -145,6 +198,13 @@ def SIRnet(thetaVec, N, adjMat, initInfected, chainBool=True, plotChain=False):
                 infVec = np.delete(infVec, tmpInd)
                 infCount -= 1
                 ## end of if statement
+            #Compute time of the event
+            time += 1/np.sum(totalRate)* np.log(1/tmpRand)
+            perecentInfectedRecovered = (infCount + len(recVec))/len(adjMat)
+            if perecentInfectedRecovered >= cutoff:
+                timeVec = np.append(timeVec, time)
+                cutoff +=.05
+            
             ## end of while loop
 
         if infCount == N:
@@ -176,13 +236,13 @@ def SIRnet(thetaVec, N, adjMat, initInfected, chainBool=True, plotChain=False):
                     nx.draw_spring(nx.from_numpy_matrix(infAdjMat), node_color=colorVec)
                     plt.show()
 
-            print("Shape: ", infAdjMat.shape)
-            print("Chain: ", infAdjMat)
+            #print("Shape: ", infAdjMat.shape)
+            #print("Chain: ", infAdjMat)
         else:
             successBool = False
 
     ## end of while successBool loop
-    return infAdjMat
+    return (infAdjMat, infVec, contactVec, timeVec)
     
     
 
