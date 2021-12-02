@@ -23,8 +23,9 @@ import matplotlib.pyplot as plt
 #     group1_basevec.append(np.zeros(network_size-group1_num_infections-group1_num_contacts))
 #     networkx.
 
-def GetSimulatedData(num_samples, models, network_size, sir_params, avg_contacts, infection_cutoff):
+def GetSimulatedData(filename, num_samples, models, network_size, sir_params, avg_contacts, infection_cutoff):
     x_adjMat= []
+    x_adjMatSparse=[]
     x_adjVec = []
     x_infVec = []
     x_contactVec = []
@@ -44,7 +45,8 @@ def GetSimulatedData(num_samples, models, network_size, sir_params, avg_contacts
             elif network_type.lower() == "scale-free":
                 graph = nx.barabasi_albert_graph(network_size, avg_contacts)
             # #Draw Adjacency matrix
-            ad_mat = nx.linalg.graphmatrix.adjacency_matrix(graph).toarray()
+            ad_matSparse=nx.linalg.graphmatrix.adjacency_matrix(graph)
+            ad_mat = ad_matSparse.toarray()
             # #Simulate infection 
             (ad_mat, infVec, contactVec, time)=SIRnet(sir_params, network_size*infection_cutoff, ad_mat, initInfected=0)
             # #Vectorize
@@ -57,6 +59,7 @@ def GetSimulatedData(num_samples, models, network_size, sir_params, avg_contacts
             # print(network_type.lower())
             # #Save x-Data
             x_adjMat.append(ad_mat)
+            x_adjMatSparse.append(ad_matSparse)
             x_adjVec.append(ad_vec)
             x_infVec.append(infVec)
             x_contactVec.append(contactVec)
@@ -65,7 +68,7 @@ def GetSimulatedData(num_samples, models, network_size, sir_params, avg_contacts
             y_network.append(network_type.lower())
             
     #Save data
-    np.savez("../data/full_data", x_adjMat = x_adjMat, x_adjVec=x_adjVec, x_infVec=x_infVec, 
+    np.savez(filename, x_adjMat = x_adjMat, x_adjMatSparse= x_adjMatSparse, x_adjVec=x_adjVec, x_infVec=x_infVec, 
              x_contactVec= x_contactVec, y_time = y_time, y_network= y_network)
             
         

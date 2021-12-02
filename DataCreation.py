@@ -9,16 +9,18 @@ import sys
 from generate_data import GetSimulatedData as GetFull
 
 def main(argv=None):
-    models= ["small worlds", "erdos renyi", "complete", "scale-free"]
-    network_size=200
+    models= ["small worlds", "erdos renyi", "scale-free"]
+    network_size=120
     sir_params= np.array([0.5, 0.1])
     avg_contacts = 5
     infection_cutoff=.3
-    GetFull(4000, models, network_size, sir_params, avg_contacts, infection_cutoff)
+    filename = "../data/noComplete_data.npz"
+    GetFull(filename, 4000, models, network_size, sir_params, avg_contacts, infection_cutoff)
     
-    data=np.load("../data/full_data.npz", allow_pickle=True)
+    data=np.load(filename, allow_pickle=True)
     
     print(data["x_adjMat"].shape)
+    print(data["x_adjMatSparse"].shape)
     print(data["x_adjVec"].shape)
     print(data["y_network"].shape)
     print(data["y_time"].shape)    
