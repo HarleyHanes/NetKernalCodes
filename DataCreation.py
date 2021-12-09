@@ -10,7 +10,7 @@ from generate_data import GetSimulatedData as GetFull
 
 def main(argv=None):
     models= ["small worlds", "erdos renyi", "complete", "scale-free"]
-    network_size=200
+    network_size=100
     sir_params= np.array([0.5, 0.1])
     avg_contacts = 5
     infection_cutoff=.3

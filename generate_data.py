@@ -110,9 +110,9 @@ def GetFullTestData(num_samples, num_contacts, network_size):
     np.savez("../data/test_data", x_data = x_data, y_data = y_data)
     return (x_data, y_data)
 
-def TrimNetwork(adjMat,infectedNodes,contactDepth,dataLossProb = 0):
+def TrimNetwork(adjMat,infectedNodes,dataLossProb = 0):
     adjMat_trimmed = np.zeros(adjMat.shape)
-    for i in range(contactDepth):
+    for i in range(len(infectedNodes)):
         #Get full contacts of infected individual i
         contacts = adjMat[i,:]
         if not dataLossProb==0:

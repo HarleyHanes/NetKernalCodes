@@ -41,15 +41,11 @@ def main(argv=None):
     #unpack npz file
     data=np.load(data_filename, allow_pickle=True)
     #seperate adjacency matrices and network type
-    x_data=data["x_adjMatSparse"]
+    x_data=[data["x_adjMatSparse"], data["x_infVec"], data["x_contactVec"]]
     y_data=data["y_network"]
-    G_data=[]
     print("Data Size: " + str(x_data.shape[0]))
-    print("Formulate Graphs")
-    for i in range(x_data.shape[0]):
-        G_data.append(Graph(x_data[i]))
     #Split into Test/ Train
-    G_train, G_test, y_train, y_test = train_test_split(G_data, y_data, test_size = test_train_split)
+    x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, test_size = test_train_split)
     #------------------Import Kernel---------------------
     kernel_fcn = kernels.GetKernel(kernel_type) #kernel function with inputs params and x_data
     #------------------Tune/ Train SVM and Kernel-----------------------
@@ -59,38 +55,42 @@ def main(argv=None):
     #params=np.empty(2)
     #print(x_train.shape)
     print("Computing kernels")
+    G_train=[]
+    G_test=[]
     kernel_fcn=GraphKernel({"name": "shortest_path", "normalize": True, "with_labels": False})
-    # for iP in range(len(p_vec)):
-    #     #Trim Data
-    #     for i in range(len(G_train)):
-    #         G_train_trimmed[i].adjacency_matrix = generate_data.TrimNetwork(G_train.adjacency_matrix)
-    #Compute kernel matrix
-    kernel_train = kernel_fcn.fit_transform(G_train)
-    # Compute Test Kernel
-    kernel_test = kernel_fcn.transform(G_test)
-    print("Training SVM")
-    for iC in range(len(c_vec)):
-        #Define SVC with precomputed kernel
-        model = SVC(kernel= "precomputed", C=c_vec[iC],  random_state=0)
-        #Fit model
-        print("Fitting model")
-        model.fit(kernel_train,y_train)
-        #Test accuracy
-        print("Testing model")
-        accuracy = model.score(kernel_test,y_test)
-        if accuracy >=accuracy_best:
-            y_pred = model.predict(kernel_test)
-            confmatrix = confusion_matrix(y_pred, y_test, 
-                                          labels=["small worlds", "scale-free", "complete", "erdos renyi"])
-            confmatrix = confmatrix#/(confmatrix.sum(axis=1)+.001)
-        accuracies[iC]=accuracy
-        #Formulate with 5-fold cross-validation - CURRENTLY BUGGED
-        #Train with 5-fold cross-validation
-        #cv_results = cross_validate(model, kernel_train,y_train, cv=cv_number, return_estimator=True)
-        # for jCV in range(cv_number):
-        #     print(kernel_test.shape)
-        #     split_accuracies[jCV]=cv_results["estimator"][jCV].score(kernel_test,y_test)
-        # accuracies[iSig][iLam]=np.mean(split_accuracies)
+    for iP in range(len(p_vec)):
+        #Trim Data
+        for i in range(len(G_train)):
+            G_train.append(Graph(generate_data.TrimNetwork(x_train[0][i], x_train[1][i], dataLossProb=p_vec[iP])))
+        for i in range(len(G_test)):
+            G_test.append(Graph(generate_data.TrimNetwork(x_test[0][i], x_test[1][i], dataLossProb=p_vec[iP])))
+        #Compute kernel matrix
+        kernel_train = kernel_fcn.fit_transform(G_train)
+        # Compute Test Kernel
+        kernel_test = kernel_fcn.transform(G_test)
+        print("Training SVM")
+        for iC in range(len(c_vec)):
+            #Define SVC with precomputed kernel
+            model = SVC(kernel= "precomputed", C=c_vec[iC],  random_state=0)
+            #Fit model
+            print("Fitting model")
+            model.fit(kernel_train,y_train)
+            #Test accuracy
+            print("Testing model")
+            accuracy = model.score(kernel_test,y_test)
+            if accuracy >=accuracy_best:
+                y_pred = model.predict(kernel_test)
+                confmatrix = confusion_matrix(y_pred, y_test, 
+                                              labels=["small worlds", "scale-free", "complete", "erdos renyi"])
+                confmatrix = confmatrix#/(confmatrix.sum(axis=1)+.001)
+            accuracies[iC][iP]=accuracy
+            #Formulate with 5-fold cross-validation - CURRENTLY BUGGED
+            #Train with 5-fold cross-validation
+            #cv_results = cross_validate(model, kernel_train,y_train, cv=cv_number, return_estimator=True)
+            # for jCV in range(cv_number):
+            #     print(kernel_test.shape)
+            #     split_accuracies[jCV]=cv_results["estimator"][jCV].score(kernel_test,y_test)
+            # accuracies[iSig][iLam]=np.mean(split_accuracies)
     print(accuracies)
     print(y_test[0:20])
     print(y_pred[0:20])
@@ -102,10 +102,10 @@ def main(argv=None):
     #Record optimal solutions
     
     #Plot Accuracy
-    plt.plot(c_vec, accuracies)
+    plt.plot(p_vec, np.max(accuracies, axis=0))
     plt.ylabel("Testing Accuracy")
-    plt.xlabel("C")
-    plt.savefig('../figures/Ctuning.png',bbox_inches='tight')
+    plt.xlabel("p")
+    plt.savefig('../Figures/Ptesting.png',bbox_inches='tight')
     
     
     
