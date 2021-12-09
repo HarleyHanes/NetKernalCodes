@@ -8,14 +8,14 @@ import numpy as np
 import sys
 from generate_data import GetSimulatedData as GetFull
 
-def main(argv=None):
+def main(infection_cuttoff):
     models= ["small worlds", "erdos renyi", "complete", "scale-free"]
     network_size=100
     sir_params= np.array([0.5, 0.1])
     avg_contacts = 5
     infection_cutoff=.3
     filename = "../data/diffDegree_data.npz"
-    GetFull(filename, 1000, models, network_size, sir_params, avg_contacts, infection_cutoff)
+    GetFull(filename, 500, models, network_size, sir_params, avg_contacts, infection_cutoff)
     
     data=np.load(filename, allow_pickle=True)
     

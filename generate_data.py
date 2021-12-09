@@ -117,10 +117,10 @@ def TrimNetwork(adjMat,infectedNodes,dataLossProb = 0):
         contacts = adjMat[i,:]
         if not dataLossProb==0:
             #Get removed contacts with likelihood
-            keptSamples=((np.random.random_sample(size=contacts.shape)+dataLossProb).astype(int)).astype(bool)
+            droppedSamples=((np.random.random_sample(size=contacts.shape)<dataLossProb))
             #Remove contacts
-            for j in range(len(keptSamples)):
-                if not keptSamples[j]:
+            for j in range(len(droppedSamples)):
+                if droppedSamples[j]:
                     contacts[j]=0
         #Construct trimmed Adjacency
         adjMat_trimmed[i,:]=contacts

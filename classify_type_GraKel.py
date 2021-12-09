@@ -32,7 +32,7 @@ def main(argv=None):
     #sigma_vec=10**(np.arange(1,10,dtype=float)/3)
     #lambda_vec= 10**(-np.arange(0,9,dtype=float))
     c_vec = 10**(np.arange(-4,8, dtype=float))
-    p_vec = np.linspace(0,.7,8)
+    p_vec = np.linspace(0,.9,10)
     #depth_vec = np.arange(2,6,dtype=int)
     #Set other meta-parameters
     #cv_number=5   # what k-fold cross-validation to use
@@ -41,11 +41,9 @@ def main(argv=None):
     #unpack npz file
     data=np.load(data_filename, allow_pickle=True)
     #seperate adjacency matrices and network type
-    x_data=[data["x_adjMatSparse"], data["x_infVec"], data["x_contactVec"]]
+    #x_data=[data["x_adjMatSparse"], data["x_infVec"], data["x_contactVec"]]
     y_data=data["y_network"]
-    print("Data Size: " + str(x_data.shape[0]))
-    #Split into Test/ Train
-    x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, test_size = test_train_split)
+    #print("Data Size: " + str(len(x_data)))
     #------------------Import Kernel---------------------
     kernel_fcn = kernels.GetKernel(kernel_type) #kernel function with inputs params and x_data
     #------------------Tune/ Train SVM and Kernel-----------------------
@@ -55,15 +53,16 @@ def main(argv=None):
     #params=np.empty(2)
     #print(x_train.shape)
     print("Computing kernels")
-    G_train=[]
-    G_test=[]
     kernel_fcn=GraphKernel({"name": "shortest_path", "normalize": True, "with_labels": False})
     for iP in range(len(p_vec)):
+        G_data=[]
+        x_data = data["x_adjMat"]
+        infections = data["x_infVec"]
         #Trim Data
-        for i in range(len(G_train)):
-            G_train.append(Graph(generate_data.TrimNetwork(x_train[0][i], x_train[1][i], dataLossProb=p_vec[iP])))
-        for i in range(len(G_test)):
-            G_test.append(Graph(generate_data.TrimNetwork(x_test[0][i], x_test[1][i], dataLossProb=p_vec[iP])))
+        for i in range(len(x_data)):
+            G_data.append(Graph(generate_data.TrimNetwork(x_data[i], infections[i], dataLossProb=p_vec[iP])))
+        #Split into Test/ Train
+        G_train, G_test, y_train, y_test = train_test_split(G_data, y_data, test_size = test_train_split)
         #Compute kernel matrix
         kernel_train = kernel_fcn.fit_transform(G_train)
         # Compute Test Kernel
@@ -102,9 +101,11 @@ def main(argv=None):
     #Record optimal solutions
     
     #Plot Accuracy
-    plt.plot(p_vec, np.max(accuracies, axis=0))
+    plt.plot(p_vec, np.max(accuracies, axis=0), label='Best Model')
+    plt.plot(p_vec, np.min(accuracies, axis=0), label='Worst Model')
+    plt.legend()
     plt.ylabel("Testing Accuracy")
-    plt.xlabel("p")
+    plt.xlabel("Edge Dropout Probability")
     plt.savefig('../Figures/Ptesting.png',bbox_inches='tight')
     
     
