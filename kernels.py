@@ -38,3 +38,4 @@ def GaussKernelSparseUnscaled(x1,x2,sigma):
             x=x1[i]-x2[j]
             kernel[i,j] = np.exp(-(1/2*sigma**2)*sp.sparse.linalg.norm(x, ord='fro'))
     return kernel
+

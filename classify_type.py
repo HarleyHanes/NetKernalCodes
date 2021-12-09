@@ -22,13 +22,13 @@ from sklearn.metrics import confusion_matrix
 
 def main(argv=None):
     #----------------Define Global Parameters---------------------
-    data_filename='../data/noComplete_data.npz'
+    data_filename='../data/diffDegree_data.npz'
     kernel_type='gaussian (sparse)' #gaussian or spectral
-    test_train_split = .98
+    test_train_split = .4
     #Set Tuning vectors (taken from http://www.stats.ox.ac.uk/~sejdinov/teaching/atsml19/KRR.html)
     #sigma_vec=10**(np.arange(1,10,dtype=float)/3)
     #lambda_vec= 10**(-np.arange(0,9,dtype=float))
-    sigma_vec = 10**(np.arange(1,3,dtype=float)/3)
+    sigma_vec = 10**(np.arange(1,2,dtype=float)/3)
     lambda_vec = 10**(-np.arange(1, 8, dtype=float))
     c_vec = 10**(np.arange(-4,8, dtype=float))
     #depth_vec = np.arange(2,6,dtype=int)

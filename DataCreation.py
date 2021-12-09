@@ -9,13 +9,13 @@ import sys
 from generate_data import GetSimulatedData as GetFull
 
 def main(argv=None):
-    models= ["small worlds", "erdos renyi", "scale-free"]
-    network_size=120
+    models= ["small worlds", "erdos renyi", "complete", "scale-free"]
+    network_size=200
     sir_params= np.array([0.5, 0.1])
     avg_contacts = 5
     infection_cutoff=.3
-    filename = "../data/noComplete_data.npz"
-    GetFull(filename, 4000, models, network_size, sir_params, avg_contacts, infection_cutoff)
+    filename = "../data/diffDegree_data.npz"
+    GetFull(filename, 1000, models, network_size, sir_params, avg_contacts, infection_cutoff)
     
     data=np.load(filename, allow_pickle=True)
     

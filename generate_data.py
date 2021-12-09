@@ -39,11 +39,11 @@ def GetSimulatedData(filename, num_samples, models, network_size, sir_params, av
             if network_type.lower()=="small worlds":
                 graph = nx.watts_strogatz_graph(network_size, avg_contacts, .1)
             elif network_type.lower()=="erdos renyi":
-                graph = nx.fast_gnp_random_graph(network_size, 2*avg_contacts/(network_size-1))
+                graph = nx.fast_gnp_random_graph(network_size, 2*(avg_contacts+10)/(network_size-1))
             elif network_type.lower()=="complete":
                 graph = nx.erdos_renyi_graph(network_size, 1)
             elif network_type.lower() == "scale-free":
-                graph = nx.barabasi_albert_graph(network_size, avg_contacts)
+                graph = nx.barabasi_albert_graph(network_size, avg_contacts-3)
             # #Draw Adjacency matrix
             ad_matSparse=nx.linalg.graphmatrix.adjacency_matrix(graph)
             ad_mat = ad_matSparse.toarray()
