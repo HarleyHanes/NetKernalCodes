@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import kernels
 from grakel import GraphKernel
 from grakel import Graph
-import generat_data
+import generate_data
 
 #Load Functions
 from sklearn.svm import SVC
@@ -101,12 +101,11 @@ def main(argv=None):
     #--------------------------Plot and save Results--------------------
     #Record optimal solutions
     
-    #Plot Accuracy Correlations
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
-    #Plot sigma Tunning (Guassian)
-    #ax1.scatter()
-    #Plot lambda Tunning (Gaussian)
-    #Plot mu Tunning (Gaussian vs. Spectral Weights)
+    #Plot Accuracy
+    plt.plot(c_vec, accuracies)
+    plt.ylabel("Testing Accuracy")
+    plt.xlabel("C")
+    plt.savefig('../figures/Ctuning.png',bbox_inches='tight')
     
     
     
